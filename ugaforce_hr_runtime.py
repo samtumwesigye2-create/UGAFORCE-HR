@@ -15,11 +15,16 @@ from ugaforce_hr.ugacore_client import heartbeat
 for r in (people_admin_router,recruiting_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
 
 PEOPLE_PAGE = Path(__file__).resolve().parent / 'ugaforce_hr' / 'people.html'
+RECRUITING_PAGE = Path(__file__).resolve().parent / 'ugaforce_hr' / 'recruiting.html'
 
 @app.get('/people', include_in_schema=False)
 def people_page():
     return FileResponse(PEOPLE_PAGE)
 
+@app.get('/recruiting', include_in_schema=False)
+def recruiting_page():
+    return FileResponse(RECRUITING_PAGE)
+
 @app.on_event('startup')
 def announce_startup()->None:
- heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui')
+ heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui')
