@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+psycopg2-binary
+pydantic[email]
+requests
+shapely
+cryptography
