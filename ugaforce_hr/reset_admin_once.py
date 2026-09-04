@@ -16,11 +16,21 @@ def main() -> None:
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "update ugaforce_hr_users set password_hash=%s, active=true, failed_signins=0, locked_until=null, updated_at=now() where lower(username)=lower(%s) and role_name='HR_ADMIN' returning id::text",
-                (hash_password(PASSWORD), USERNAME),
+                "select id::text,must_change_password,password_changed_at from ugaforce_hr_users where lower(username)=lower(%s) and role_name='HR_ADMIN'",
+                (USERNAME,),
             )
             row = cur.fetchone()
             if not row:
+                raise RuntimeError("HR_ADMIN account not found")
+            _, must_change_password, password_changed_at = row
+            if password_changed_at is not None and not must_change_password:
+                print("UGAFORCE-HR admin repair: skipped; administrator already owns a user-defined password")
+                return
+            cur.execute(
+                "update ugaforce_hr_users set password_hash=%s, active=true, failed_signins=0, locked_until=null, must_change_password=true, password_changed_at=null, updated_at=now() where lower(username)=lower(%s) and role_name='HR_ADMIN' returning id::text",
+                (hash_password(PASSWORD), USERNAME),
+            )
+            if not cur.fetchone():
                 raise RuntimeError("HR_ADMIN account not found")
         conn.commit()
     print("UGAFORCE-HR admin repair: completed")
