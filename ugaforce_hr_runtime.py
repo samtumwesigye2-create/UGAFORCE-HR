@@ -1,4 +1,6 @@
 from __future__ import annotations
+from pathlib import Path
+from fastapi.responses import FileResponse
 from ugaforce_hr_app import app
 from ugaforce_hr.completion import router as completion_router
 from ugaforce_hr.onboarding import router as onboarding_router
@@ -11,6 +13,13 @@ from ugaforce_hr.time_attendance import router as time_attendance_router
 from ugaforce_hr.workflow_analytics import router as workflow_analytics_router
 from ugaforce_hr.ugacore_client import heartbeat
 for r in (people_admin_router,recruiting_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
+
+PEOPLE_PAGE = Path(__file__).resolve().parent / 'ugaforce_hr' / 'people.html'
+
+@app.get('/people', include_in_schema=False)
+def people_page():
+    return FileResponse(PEOPLE_PAGE)
+
 @app.on_event('startup')
 def announce_startup()->None:
- heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle')
+ heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui')
