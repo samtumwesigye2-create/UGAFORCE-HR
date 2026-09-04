@@ -18,6 +18,7 @@ BASE = Path(__file__).resolve().parent / 'ugaforce_hr'
 PEOPLE_PAGE = BASE / 'people.html'
 RECRUITING_PAGE = BASE / 'recruiting.html'
 ONBOARDING_PAGE = BASE / 'onboarding.html'
+TIME_PAGE = BASE / 'time_attendance.html'
 
 @app.get('/people', include_in_schema=False)
 def people_page(): return FileResponse(PEOPLE_PAGE)
@@ -25,7 +26,9 @@ def people_page(): return FileResponse(PEOPLE_PAGE)
 def recruiting_page(): return FileResponse(RECRUITING_PAGE)
 @app.get('/onboarding', include_in_schema=False)
 def onboarding_page(): return FileResponse(ONBOARDING_PAGE)
+@app.get('/time-attendance', include_in_schema=False)
+def time_attendance_page(): return FileResponse(TIME_PAGE)
 
 @app.on_event('startup')
 def announce_startup()->None:
- heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui')
+ heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui,time-attendance-ui')
