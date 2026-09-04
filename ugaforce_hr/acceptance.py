@@ -11,18 +11,26 @@ REQUIRED_MODULES = [
     'ugaforce_hr.security','ugaforce_hr.people_admin','ugaforce_hr.recruiting',
     'ugaforce_hr.onboarding','ugaforce_hr.time_attendance','ugaforce_hr.payroll',
     'ugaforce_hr.performance','ugaforce_hr.workflow_analytics','ugaforce_hr.completion',
-    'ugaforce_hr_runtime',
+    'ugaforce_hr.password_lifecycle','ugaforce_hr_runtime',
 ]
 REQUIRED_ROUTES = {
     '/health','/api/v1/auth/login','/api/v1/employees','/api/v1/recruiting/metrics',
     '/api/v1/onboarding/metrics','/api/v1/time/metrics','/api/v1/payroll/metrics',
     '/api/v1/performance/metrics','/api/v1/approvals/inbox','/api/v1/analytics/executive',
     '/api/v1/notifications/me','/api/v1/offboarding','/api/v1/security/readiness',
+    '/api/v1/auth/password-state','/api/v1/auth/change-password',
+    '/people','/recruiting','/onboarding','/time-attendance','/payroll','/performance',
+    '/approvals','/analytics','/admin','/offboarding','/modules','/account/password',
+}
+REQUIRED_UI_FILES = {
+    'dashboard.html','people.html','recruiting.html','onboarding.html','time_attendance.html',
+    'payroll.html','performance.html','approvals.html','analytics.html','admin.html',
+    'offboarding.html','modules.html','password.html',
 }
 ROUTER_MODULES = [
     'ugaforce_hr.people_admin','ugaforce_hr.recruiting','ugaforce_hr.onboarding',
     'ugaforce_hr.time_attendance','ugaforce_hr.payroll','ugaforce_hr.performance',
-    'ugaforce_hr.workflow_analytics','ugaforce_hr.completion',
+    'ugaforce_hr.workflow_analytics','ugaforce_hr.completion','ugaforce_hr.password_lifecycle',
 ]
 
 
@@ -36,6 +44,9 @@ def static_checks() -> dict[str, Any]:
     names = [p.name for p in migrations]
     if len(names) != len(set(names)):
         failures.append('duplicate migration names')
+    missing_ui = sorted(name for name in REQUIRED_UI_FILES if not (ROOT / name).is_file())
+    if missing_ui:
+        failures.append('missing UI files: ' + ', '.join(missing_ui))
     for module in REQUIRED_MODULES:
         try:
             importlib.import_module(module)
@@ -55,7 +66,7 @@ def static_checks() -> dict[str, Any]:
             failures.append('missing routes: ' + ', '.join(missing))
     except Exception as exc:
         failures.append(f'route inspection failed: {exc}')
-    return {'ok': not failures, 'failures': failures, 'migrations': names}
+    return {'ok': not failures, 'failures': failures, 'migrations': names, 'ui_files': sorted(REQUIRED_UI_FILES)}
 
 
 def environment_checks() -> dict[str, Any]:
