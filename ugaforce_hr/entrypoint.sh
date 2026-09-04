@@ -8,7 +8,7 @@ echo "UGAFORCE-HR: applying pending database migrations"
 python ugaforce_hr/migrate.py
 
 echo "UGAFORCE-HR: ensuring first admin initialization"
-python ugaforce_hr/bootstrap_once.py
+python -m ugaforce_hr.bootstrap_once
 
 echo "UGAFORCE-HR: starting API"
 exec uvicorn ugaforce_hr_runtime:app --host 0.0.0.0 --port "${PORT:-8000}"
