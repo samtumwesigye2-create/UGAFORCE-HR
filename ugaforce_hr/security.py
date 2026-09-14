@@ -47,7 +47,7 @@ def issue_session(conn: Any, user_id: str) -> tuple[str, datetime]:
     return token, expires
 
 
-def authenticate(username: str, password: str) -> dict[str, Any]:
+def authenticate_local(username: str, password: str) -> dict[str, Any]:
     if not DATABASE_URL:
         raise HTTPException(status_code=503, detail="HR database is not configured")
     with psycopg2.connect(DATABASE_URL) as conn:
@@ -96,3 +96,34 @@ def current_user(authorization: str = Header(default="")) -> dict[str, Any]:
 def require_role(user: dict[str, Any], minimum: str) -> None:
     if ROLE_RANK.get(user.get("role", ""), 0) < ROLE_RANK[minimum]:
         raise HTTPException(status_code=403, detail=f"{minimum} authority required")
+
+def authenticate(username: str, password: str) -> dict[str, Any]:
+    shared_username = os.getenv("UGAFORCE_HR_SHARED_ADMIN_USERNAME", "").strip()
+    authority = os.getenv("UGAFORCE_HR_SHARED_AUTH_URL", "").strip()
+    if not shared_username or username.strip().casefold() != shared_username.casefold():
+        return authenticate_local(username, password)
+    if not DATABASE_URL:
+        raise HTTPException(503, "HR database is not configured")
+    from ugaforce_hr.shared_signin import verify_master
+    verify_master(authority, password)
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            # Serialize first sign-in so duplicate accounts cannot be provisioned.
+            cur.execute("select pg_advisory_xact_lock(hashtext(%s))", (shared_username.casefold(),))
+            cur.execute("select id::text,username,role_name,active,employee_id::text from ugaforce_hr_users where lower(username)=lower(%s) for update", (shared_username,))
+            row = cur.fetchone()
+            if not row:
+                # This random hash is not a copy of the central access code.
+                cur.execute("insert into ugaforce_hr_users(username,password_hash,role_name,must_change_password) values(%s,%s,'HR_ADMIN',false) returning id::text,username,role_name,active,employee_id::text", (shared_username, hash_password(secrets.token_urlsafe(48))))
+                row = cur.fetchone()
+            uid, uname, role, active, employee_id = row
+            if not active:
+                raise HTTPException(403, "Account disabled")
+            # Preserve the existing HR role and explicit account disablement.
+            cur.execute("update ugaforce_hr_users set failed_signins=0,locked_until=null,last_signin=now(),updated_at=now() where id=%s", (uid,))
+            cur.execute("insert into ugaforce_hr_audit_log(actor_id,action,entity_type,entity_id,after_json) values(null,'shared_admin_signin','user',%s,%s::jsonb)", (uid, '{"authority":"grid_master"}'))
+        token, expires = issue_session(conn, uid)
+        conn.commit()
+    return {"token": token, "expires_at": expires, "must_change_password": False, "user": {"id": uid, "username": uname, "role": role, "employee_id": employee_id, "must_change_password": False}}
+
+
