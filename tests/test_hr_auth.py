@@ -38,3 +38,13 @@ class HRAuthTests(unittest.TestCase):
             with self.assertRaises(HTTPException) as raised:
                 security.authenticate('owner@example.com','example-code')
         self.assertEqual(raised.exception.status_code,403)
+
+    def test_first_verified_master_login_provisions_hr_admin(self):
+        connection=MagicMock()
+        connection.__enter__.return_value=connection
+        cursor=connection.cursor.return_value.__enter__.return_value
+        cursor.fetchone.side_effect=[None,('new-id','owner@example.com','HR_ADMIN',True,None)]
+        with patch.object(security,'DATABASE_URL','postgres'), patch('ugaforce_hr.shared_signin.verify_master',return_value=True), patch.object(security.psycopg2,'connect',return_value=connection), patch.object(security,'issue_session',return_value=('hr_session',123)):
+            result=security.authenticate('owner@example.com','example-code')
+        self.assertEqual(result['user']['role'],'HR_ADMIN')
+        self.assertFalse(result['must_change_password'])

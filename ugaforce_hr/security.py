@@ -120,7 +120,7 @@ def authenticate(username: str, password: str) -> dict[str, Any]:
             if not active:
                 raise HTTPException(403, "Account disabled")
             # Preserve the existing HR role and explicit account disablement.
-            cur.execute("update ugaforce_hr_users set failed_signins=0,locked_until=null,last_signin=now(),updated_at=now() where id=%s", (uid,))
+            cur.execute("update ugaforce_hr_users set failed_signins=0,locked_until=null,must_change_password=false,last_signin=now(),updated_at=now() where id=%s", (uid,))
             cur.execute("insert into ugaforce_hr_audit_log(actor_id,action,entity_type,entity_id,after_json) values(null,'shared_admin_signin','user',%s,%s::jsonb)", (uid, '{"authority":"grid_master"}'))
         token, expires = issue_session(conn, uid)
         conn.commit()
