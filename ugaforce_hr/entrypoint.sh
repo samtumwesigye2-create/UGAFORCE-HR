@@ -16,5 +16,8 @@ python -m ugaforce_hr.reset_admin_once
 echo "UGAFORCE-HR: applying production UI upgrade"
 python ugaforce_hr/ui_upgrade.py
 
+echo "UGAFORCE-HR: setting authenticated default home"
+python ugaforce_hr/default_home.py
+
 echo "UGAFORCE-HR: starting API"
 exec uvicorn ugaforce_hr_runtime:app --host 0.0.0.0 --port "${PORT:-8000}"
