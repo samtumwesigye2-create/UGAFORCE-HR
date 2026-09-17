@@ -1,0 +1,12 @@
+CREATE SEQUENCE IF NOT EXISTS ugaforce_hr_requisition_number_seq START 1001;
+CREATE SEQUENCE IF NOT EXISTS ugaforce_hr_job_number_seq START 1001;
+ALTER TABLE ugaforce_hr_job_requisitions ADD COLUMN IF NOT EXISTS requisition_number TEXT;
+ALTER TABLE ugaforce_hr_job_postings ADD COLUMN IF NOT EXISTS job_number TEXT;
+UPDATE ugaforce_hr_job_requisitions SET requisition_number='REQ-' || LPAD(nextval('ugaforce_hr_requisition_number_seq')::text,6,'0') WHERE requisition_number IS NULL;
+UPDATE ugaforce_hr_job_postings SET job_number='JOB-' || LPAD(nextval('ugaforce_hr_job_number_seq')::text,6,'0') WHERE job_number IS NULL;
+ALTER TABLE ugaforce_hr_job_requisitions ALTER COLUMN requisition_number SET DEFAULT ('REQ-' || LPAD(nextval('ugaforce_hr_requisition_number_seq')::text,6,'0'));
+ALTER TABLE ugaforce_hr_job_postings ALTER COLUMN job_number SET DEFAULT ('JOB-' || LPAD(nextval('ugaforce_hr_job_number_seq')::text,6,'0'));
+ALTER TABLE ugaforce_hr_job_requisitions ALTER COLUMN requisition_number SET NOT NULL;
+ALTER TABLE ugaforce_hr_job_postings ALTER COLUMN job_number SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_hr_requisition_number ON ugaforce_hr_job_requisitions(requisition_number);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_hr_job_number ON ugaforce_hr_job_postings(job_number);
