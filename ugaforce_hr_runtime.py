@@ -10,10 +10,11 @@ from ugaforce_hr.payroll import router as payroll_router
 from ugaforce_hr.people_admin import router as people_admin_router
 from ugaforce_hr.performance import router as performance_router
 from ugaforce_hr.recruiting import public_router as careers_router, router as recruiting_router
+from ugaforce_hr.recruiting_refs import router as recruiting_refs_router
 from ugaforce_hr.time_attendance import router as time_attendance_router
 from ugaforce_hr.workflow_analytics import router as workflow_analytics_router
 from ugaforce_hr.ugacore_client import heartbeat
-for r in (people_admin_router,departments_admin_router,recruiting_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
+for r in (people_admin_router,departments_admin_router,recruiting_router,recruiting_refs_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
 BASE=Path(__file__).resolve().parent/'ugaforce_hr'
 PAGES={'people':'people.html','departments':'departments.html','recruiting':'recruiting.html','onboarding':'onboarding.html','time-attendance':'time_attendance.html','payroll':'payroll.html','performance':'performance.html','approvals':'approvals.html','analytics':'analytics.html','admin':'admin.html','offboarding':'offboarding.html','modules':'modules.html'}
 @app.get('/people',include_in_schema=False)
@@ -42,4 +43,4 @@ def offboarding_page(): return FileResponse(BASE/PAGES['offboarding'])
 def modules_page(): return FileResponse(BASE/PAGES['modules'])
 @app.on_event('startup')
 def announce_startup()->None:
- heartbeat('online',version=app.version,capability='people-rbac,department-administration,departments-ui,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui,time-attendance-ui,payroll-ui,performance-ui,approvals-ui,analytics-ui,admin-ui,offboarding-ui,mobile-module-launcher')
+ heartbeat('online',version=app.version,capability='people-rbac,department-administration,departments-ui,recruiting-ats,requisition-ids,job-ids,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui,time-attendance-ui,payroll-ui,performance-ui,approvals-ui,analytics-ui,admin-ui,offboarding-ui,mobile-module-launcher')
