@@ -57,5 +57,5 @@ def complete_task(tid:str,p:TaskDecision,u:dict=Depends(current_user)):
 @router.get('/security/readiness')
 def readiness(u:dict=Depends(current_user)):
  if u.get('role')!='HR_ADMIN': raise HTTPException(403,'HR administrator authority required')
- checks={'database_configured':bool(DATABASE_URL),'bootstrap_key_configured':bool(os.getenv('UGAFORCE_HR_BOOTSTRAP_KEY')),'cors_configured':bool(os.getenv('UGAFORCE_HR_ALLOWED_ORIGINS')),'ugacore_configured':bool(os.getenv('UGACORE_URL') and os.getenv('UGACORE_SERVICE_KEY'))}
+ checks={'database_configured':bool(DATABASE_URL),'bootstrap_key_configured':bool(os.getenv('UGAFORCE_HR_BOOTSTRAP_KEY')),'cors_configured':bool(os.getenv('UGAFORCE_HR_ALLOWED_ORIGINS')),'ugacore_configured':bool(os.getenv('UGACORE_URL') and os.getenv('UNG_HR_SERVICE_TOKEN'))}
  return {'ready':all([checks['database_configured'],checks['bootstrap_key_configured'],checks['cors_configured']]),'checks':checks,'note':'External integrations remain fail-open; production deployment and migration execution must be verified separately.'}
