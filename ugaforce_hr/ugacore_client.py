@@ -17,6 +17,7 @@ UGACORE_URL = os.getenv("UGACORE_URL", "").rstrip("/")
 SERVICE_ID = os.getenv("UGACORE_SERVICE_ID", "ugaforce-hr")
 SERVICE_TOKEN = os.getenv("UNG_HR_SERVICE_TOKEN", "")
 TIMEOUT_SECONDS = float(os.getenv("UGACORE_TIMEOUT_SECONDS", "1.5"))
+PUBLIC_URL = os.getenv("UGAFORCE_HR_PUBLIC_URL", "https://ugaforce-hr-production.up.railway.app").rstrip("/")
 
 
 def _post(path: str, payload: dict[str, Any]) -> None:
@@ -43,8 +44,31 @@ def _background(path: str, payload: dict[str, Any]) -> None:
     threading.Thread(target=_post, args=(path, payload), daemon=True).start()
 
 
+def _register() -> None:
+    _post(
+        f"/v1/services/{SERVICE_ID.upper()}",
+        {
+            "service_key": SERVICE_ID.upper(),
+            "display_name": "UGAFORCE-HR",
+            "base_url": PUBLIC_URL,
+            "version": "1.1.0",
+            "capabilities": ["workforce", "recruiting", "onboarding", "payroll", "performance", "approvals"],
+            "health_path": "/health",
+            "enabled": True,
+        },
+    )
+
+
 def heartbeat(status: str = "online", **metadata: Any) -> None:
-    _background(f"/v1/services/{SERVICE_ID.upper()}/heartbeat", {"status": status, "latency_ms": None, "details": metadata})
+    def send() -> None:
+        _register()
+        normalized = "degraded" if str(status).lower() in {"degraded", "warning"} else "healthy"
+        _post(
+            f"/v1/services/{SERVICE_ID.upper()}/heartbeat",
+            {"status": normalized, "latency_ms": None, "details": metadata},
+        )
+
+    threading.Thread(target=send, daemon=True).start()
 
 
 def mirror_audit(action: str, entity_type: str, entity_id: str, actor_id: str | None = None, **metadata: Any) -> None:
