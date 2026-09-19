@@ -20,7 +20,7 @@ TIMEOUT_SECONDS = float(os.getenv("UGACORE_TIMEOUT_SECONDS", "1.5"))
 PUBLIC_URL = os.getenv("UGAFORCE_HR_PUBLIC_URL", "https://ugaforce-hr-production.up.railway.app").rstrip("/")
 
 
-def _post(path: str, payload: dict[str, Any]) -> None:
+def _request(path: str, payload: dict[str, Any], method: str = "POST") -> None:
     if not UGACORE_URL or not SERVICE_TOKEN:
         return
     try:
@@ -28,7 +28,7 @@ def _post(path: str, payload: dict[str, Any]) -> None:
         request = urllib.request.Request(
             f"{UGACORE_URL}{path}",
             data=body,
-            method="POST",
+            method=method,
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {SERVICE_TOKEN}",
@@ -40,12 +40,12 @@ def _post(path: str, payload: dict[str, Any]) -> None:
         return
 
 
-def _background(path: str, payload: dict[str, Any]) -> None:
-    threading.Thread(target=_post, args=(path, payload), daemon=True).start()
+def _background(path: str, payload: dict[str, Any], method: str = "POST") -> None:
+    threading.Thread(target=_request, args=(path, payload, method), daemon=True).start()
 
 
 def _register() -> None:
-    _post(
+    _request(
         f"/v1/services/{SERVICE_ID.upper()}",
         {
             "service_key": SERVICE_ID.upper(),
@@ -56,6 +56,7 @@ def _register() -> None:
             "health_path": "/health",
             "enabled": True,
         },
+        "PUT",
     )
 
 
@@ -63,7 +64,7 @@ def heartbeat(status: str = "online", **metadata: Any) -> None:
     def send() -> None:
         _register()
         normalized = "degraded" if str(status).lower() in {"degraded", "warning"} else "healthy"
-        _post(
+        _request(
             f"/v1/services/{SERVICE_ID.upper()}/heartbeat",
             {"status": normalized, "latency_ms": None, "details": metadata},
         )
