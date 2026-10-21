@@ -3,20 +3,24 @@ from pathlib import Path
 from fastapi.responses import FileResponse
 from ugaforce_hr_app import app
 from ugaforce_hr.completion import router as completion_router
+from ugaforce_hr.departments_admin import router as departments_admin_router
 from ugaforce_hr.onboarding import router as onboarding_router
 from ugaforce_hr.password_lifecycle import router as password_lifecycle_router
 from ugaforce_hr.payroll import router as payroll_router
 from ugaforce_hr.people_admin import router as people_admin_router
 from ugaforce_hr.performance import router as performance_router
 from ugaforce_hr.recruiting import public_router as careers_router, router as recruiting_router
+from ugaforce_hr.recruiting_refs import router as recruiting_refs_router
 from ugaforce_hr.time_attendance import router as time_attendance_router
 from ugaforce_hr.workflow_analytics import router as workflow_analytics_router
 from ugaforce_hr.ugacore_client import heartbeat
-for r in (people_admin_router,recruiting_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
+for r in (people_admin_router,departments_admin_router,recruiting_router,recruiting_refs_router,careers_router,onboarding_router,time_attendance_router,payroll_router,performance_router,workflow_analytics_router,completion_router,password_lifecycle_router): app.include_router(r)
 BASE=Path(__file__).resolve().parent/'ugaforce_hr'
-PAGES={'people':'people.html','recruiting':'recruiting.html','onboarding':'onboarding.html','time-attendance':'time_attendance.html','payroll':'payroll.html','performance':'performance.html','approvals':'approvals.html','analytics':'analytics.html','admin':'admin.html','offboarding':'offboarding.html','modules':'modules.html'}
+PAGES={'people':'people.html','departments':'departments.html','recruiting':'recruiting.html','onboarding':'onboarding.html','time-attendance':'time_attendance.html','payroll':'payroll.html','performance':'performance.html','approvals':'approvals.html','analytics':'analytics.html','admin':'admin.html','offboarding':'offboarding.html','modules':'modules.html'}
 @app.get('/people',include_in_schema=False)
 def people_page(): return FileResponse(BASE/PAGES['people'])
+@app.get('/departments',include_in_schema=False)
+def departments_page(): return FileResponse(BASE/PAGES['departments'])
 @app.get('/recruiting',include_in_schema=False)
 def recruiting_page(): return FileResponse(BASE/PAGES['recruiting'])
 @app.get('/onboarding',include_in_schema=False)
@@ -39,4 +43,4 @@ def offboarding_page(): return FileResponse(BASE/PAGES['offboarding'])
 def modules_page(): return FileResponse(BASE/PAGES['modules'])
 @app.on_event('startup')
 def announce_startup()->None:
- heartbeat('online',version=app.version,capability='people-rbac,recruiting-ats,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui,time-attendance-ui,payroll-ui,performance-ui,approvals-ui,analytics-ui,admin-ui,offboarding-ui,mobile-module-launcher')
+ heartbeat('online',version=app.version,capability='people-rbac,department-administration,departments-ui,recruiting-ats,requisition-ids,job-ids,onboarding,time-attendance-leave,payroll-benefits,performance-management,workflow-approvals,analytics,notifications,offboarding,security-readiness,password-lifecycle,people-ui,recruiting-ui,onboarding-ui,time-attendance-ui,payroll-ui,performance-ui,approvals-ui,analytics-ui,admin-ui,offboarding-ui,mobile-module-launcher')

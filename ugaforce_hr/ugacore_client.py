@@ -15,23 +15,23 @@ from typing import Any
 
 UGACORE_URL = os.getenv("UGACORE_URL", "").rstrip("/")
 SERVICE_ID = os.getenv("UGACORE_SERVICE_ID", "ugaforce-hr")
-SERVICE_KEY = os.getenv("UGACORE_SERVICE_KEY", "")
+SERVICE_TOKEN = os.getenv("UNG_HR_SERVICE_TOKEN", "")
 TIMEOUT_SECONDS = float(os.getenv("UGACORE_TIMEOUT_SECONDS", "1.5"))
+PUBLIC_URL = os.getenv("UGAFORCE_HR_PUBLIC_URL", "https://ugaforce-hr-production.up.railway.app").rstrip("/")
 
 
-def _post(path: str, payload: dict[str, Any]) -> None:
-    if not UGACORE_URL or not SERVICE_KEY:
+def _request(path: str, payload: dict[str, Any], method: str = "POST") -> None:
+    if not UGACORE_URL or not SERVICE_TOKEN:
         return
     try:
         body = json.dumps(payload, default=str).encode("utf-8")
         request = urllib.request.Request(
             f"{UGACORE_URL}{path}",
             data=body,
-            method="POST",
+            method=method,
             headers={
                 "Content-Type": "application/json",
-                "X-Service-ID": SERVICE_ID,
-                "X-Service-Key": SERVICE_KEY,
+                "Authorization": f"Bearer {SERVICE_TOKEN}",
             },
         )
         with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS):
@@ -40,23 +40,46 @@ def _post(path: str, payload: dict[str, Any]) -> None:
         return
 
 
-def _background(path: str, payload: dict[str, Any]) -> None:
-    threading.Thread(target=_post, args=(path, payload), daemon=True).start()
+def _background(path: str, payload: dict[str, Any], method: str = "POST") -> None:
+    threading.Thread(target=_request, args=(path, payload, method), daemon=True).start()
+
+
+def _register() -> None:
+    _request(
+        f"/v1/services/{SERVICE_ID.upper()}",
+        {
+            "service_key": SERVICE_ID.upper(),
+            "display_name": "UGAFORCE-HR",
+            "base_url": PUBLIC_URL,
+            "version": "1.1.0",
+            "capabilities": ["workforce", "recruiting", "onboarding", "payroll", "performance", "approvals"],
+            "health_path": "/health",
+            "enabled": True,
+        },
+        "PUT",
+    )
 
 
 def heartbeat(status: str = "online", **metadata: Any) -> None:
-    _background("/monitoring/heartbeat", {"service": SERVICE_ID, "status": status, "metadata": metadata})
+    def send() -> None:
+        _register()
+        normalized = "degraded" if str(status).lower() in {"degraded", "warning"} else "healthy"
+        _request(
+            f"/v1/services/{SERVICE_ID.upper()}/heartbeat",
+            {"status": normalized, "latency_ms": None, "details": metadata},
+        )
+
+    threading.Thread(target=send, daemon=True).start()
 
 
 def mirror_audit(action: str, entity_type: str, entity_id: str, actor_id: str | None = None, **metadata: Any) -> None:
     _background(
-        "/audit/events",
+        "/v1/audit/events",
         {
-            "service": SERVICE_ID,
+            "actor_id": actor_id or SERVICE_ID,
             "action": action,
-            "entity_type": entity_type,
-            "entity_id": entity_id,
-            "actor_id": actor_id,
-            "metadata": metadata,
+            "resource_type": entity_type,
+            "resource_id": entity_id,
+            "payload": metadata,
         },
     )
